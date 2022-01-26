@@ -33,8 +33,11 @@ function Titulo(props) {
 // export default HomePage
 
 export default function PaginaInicial() {
-  const [username, setUsername] = React.useState('nanacorrea')
+  const [username, setUsername] = React.useState('')
+  const image =
+    'https://prints.ultracoloringpages.com/c99dc7e3eae4271593d51a4e8e336571.png'
   const roteamento = useRouter()
+  let botao = ''
 
   return (
     <>
@@ -74,7 +77,6 @@ export default function PaginaInicial() {
             as="form"
             onSubmit={function (infosdoevento) {
               infosdoevento.preventDefault()
-              console.log('Alguém submeteu o form')
               roteamento.push('/chat')
             }}
             styleSheet={{
@@ -99,9 +101,9 @@ export default function PaginaInicial() {
             </Text>
 
             <TextField
+              placeholder="Nome de usuário"
               value={username}
               onChange={function (event) {
-                console.log('usuario digitou', event.target.value)
                 const valor = event.target.value
                 setUsername(valor)
               }}
@@ -115,7 +117,9 @@ export default function PaginaInicial() {
                 }
               }}
             />
+            {username.length <= 2 ? (botao = true) : (botao = false)}
             <Button
+              disabled={botao}
               type="submit"
               label="Entrar"
               fullWidth
@@ -150,7 +154,11 @@ export default function PaginaInicial() {
                 borderRadius: '50%',
                 marginBottom: '16px'
               }}
-              src={`https://github.com/${username}.png`}
+              src={
+                username.length > 2
+                  ? `https://github.com/${username}.png`
+                  : image
+              }
             />
             <Text
               variant="body4"
@@ -161,7 +169,7 @@ export default function PaginaInicial() {
                 borderRadius: '1000px'
               }}
             >
-              {username}
+              {username.length > 2 ? username : 'Aluno'}
             </Text>
           </Box>
           {/* Photo Area */}
