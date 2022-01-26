@@ -77,7 +77,16 @@ export default function PaginaInicial() {
             as="form"
             onSubmit={function (infosdoevento) {
               infosdoevento.preventDefault()
-              roteamento.push('/chat')
+              fetch(`https://api.github.com/users/${username}`).then(function (
+                respostaDoServidor
+              ) {
+                console.log(respostaDoServidor.status)
+                if (respostaDoServidor.status == 200) {
+                  roteamento.push('/chat')
+                } else {
+                  roteamento.push('/404')
+                }
+              })
             }}
             styleSheet={{
               display: 'flex',
