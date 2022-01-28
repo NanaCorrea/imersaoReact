@@ -6,6 +6,7 @@ export default function ChatPage() {
   // Sua lógica vai aqui
   const [mensagem, setMensagem] = React.useState('')
   const [listaDeMensagens, setListaDeMensagens] = React.useState([])
+  let botao = ''
 
   function handleNovaMensagem(novaMensagem) {
     const mensagem = {
@@ -98,6 +99,20 @@ export default function ChatPage() {
                 color: appConfig.theme.colors.neutrals[200]
               }}
             />
+            {mensagem.length < 1 ? (botao = true) : (botao = false)}
+            <Button
+              disabled={botao}
+              onClick={event => {
+                handleNovaMensagem(mensagem)
+              }}
+              label="Enviar"
+              buttonColors={{
+                contrastColor: appConfig.theme.colors.neutrals['000'],
+                mainColor: appConfig.theme.colors.primary[500],
+                mainColorLight: appConfig.theme.colors.primary[400],
+                mainColorStrong: appConfig.theme.colors.primary[600]
+              }}
+            />
           </Box>
         </Box>
       </Box>
@@ -184,6 +199,15 @@ function MessageList(props) {
                 {new Date().toLocaleDateString()}
               </Text>
             </Box>
+            <Button
+              label="X"
+              key={mensagem.id}
+              styleSheet={{
+                width: '10px',
+                height: '10px',
+                marginRight: '10px'
+              }}
+            />
             {mensagem.texto}
           </Text>
         )
