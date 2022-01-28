@@ -59,7 +59,10 @@ export default function ChatPage() {
             padding: '16px'
           }}
         >
-          <MessageList mensagens={listaDeMensagens} />
+          <MessageList
+            mensagens={listaDeMensagens}
+            setLista={setListaDeMensagens}
+          />
           {/* {listaDeMensagens.map(mensagemAtual => {
             return (
               <li key={mensagemAtual.id}>
@@ -145,6 +148,10 @@ function Header() {
 }
 
 function MessageList(props) {
+  function handleRemove(id) {
+    const lista = props.mensagens.filter(msg => msg.id !== id)
+    props.setLista(lista)
+  }
   return (
     <Box
       tag="ul"
@@ -201,7 +208,9 @@ function MessageList(props) {
             </Box>
             <Button
               label="X"
-              key={mensagem.id}
+              onClick={() => {
+                handleRemove(mensagem.id)
+              }}
               styleSheet={{
                 width: '10px',
                 height: '10px',
