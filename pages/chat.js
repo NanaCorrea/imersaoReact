@@ -2,6 +2,8 @@ import { Box, Text, TextField, Image, Button } from '@skynexui/components'
 import React from 'react'
 import appConfig from '../config.json'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { useRouter } from 'next/router'
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker'
 
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQwODkwNiwiZXhwIjoxOTU4OTg0OTA2fQ.1KGseWVCdZfq9MGUMAFM0eWIj5bzyHApwlx68lf26_o'
@@ -9,8 +11,17 @@ const SUPABASE_URL = 'https://lmovgrlioctgpdnikert.supabase.co'
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 export default function ChatPage() {
+  const roteamento = useRouter()
+  const usuarioLogado = roteamento.query.username
   const [mensagem, setMensagem] = React.useState('')
-  const [listaDeMensagens, setListaDeMensagens] = React.useState([])
+  const [listaDeMensagens, setListaDeMensagens] = React.useState([
+    {
+      id: 1,
+      de: 'Nanacorrea',
+      texto:
+        ':sticker: https://www.alura.com.br/imersao-react-4/assets/figurinhas/Figurinha_3.png'
+    }
+  ])
   let botao = ''
 
   React.useEffect(() => {
@@ -19,13 +30,13 @@ export default function ChatPage() {
       .select('*')
       .order('id', { ascending: false })
       .then(({ data }) => {
-        setListaDeMensagens(data)
+        // setListaDeMensagens(data)
       })
   }, [])
 
   function handleNovaMensagem(novaMensagem) {
     const mensagem = {
-      de: 'Mariana',
+      de: usuarioLogado,
       texto: novaMensagem
     }
 
@@ -114,13 +125,20 @@ export default function ChatPage() {
                 color: appConfig.theme.colors.neutrals[200]
               }}
             />
+            <ButtonSendSticker />
             {mensagem.length < 1 ? (botao = true) : (botao = false)}
             <Button
               disabled={botao}
               onClick={event => {
                 handleNovaMensagem(mensagem)
               }}
-              label="Enviar"
+              styleSheet={{
+                borderRadius: '50%',
+                minHeight: '50px',
+                minWidth: '50px',
+                marginBottom: '8px'
+              }}
+              label=">>"
               buttonColors={{
                 contrastColor: appConfig.theme.colors.neutrals['000'],
                 mainColor: appConfig.theme.colors.primary[500],
@@ -150,7 +168,7 @@ function Header() {
         <Text variant="heading5">Chat</Text>
         <Button
           variant="tertiary"
-          colorVariant="neutral"
+          colorVariant="primary"
           label="Logout"
           href="/"
         />

@@ -19,19 +19,6 @@ function Titulo(props) {
   )
 }
 
-// Componente React
-// function HomePage() {
-//     // JSX
-//     return (
-//         <div>
-//             <GlobalStyle />
-//             <Titulo tag="h2">Boas vindas de volta!</Titulo>
-//             <h2>Discord - Alura Matrix</h2>
-//         </div>
-//     )
-// }
-// export default HomePage
-
 export default function PaginaInicial() {
   const [username, setUsername] = React.useState('')
   const image =
@@ -72,7 +59,6 @@ export default function PaginaInicial() {
             backgroundColor: appConfig.theme.colors.neutrals[700]
           }}
         >
-          {/* Formulário */}
           <Box
             as="form"
             onSubmit={function (infosdoevento) {
@@ -82,7 +68,7 @@ export default function PaginaInicial() {
               ) {
                 console.log(respostaDoServidor.status)
                 if (respostaDoServidor.status == 200) {
-                  roteamento.push('/chat')
+                  roteamento.push(`/chat?username=${username}`)
                 } else {
                   roteamento.push('/404')
                 }
@@ -140,9 +126,7 @@ export default function PaginaInicial() {
               }}
             />
           </Box>
-          {/* Formulário */}
 
-          {/* Photo Area */}
           <Box
             styleSheet={{
               display: 'flex',
@@ -181,7 +165,6 @@ export default function PaginaInicial() {
               {username.length > 2 ? username : 'Aluno'}
             </Text>
           </Box>
-          {/* Photo Area */}
         </Box>
       </Box>
     </>
