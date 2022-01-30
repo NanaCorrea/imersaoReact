@@ -10,18 +10,20 @@ const SUPABASE_ANON_KEY =
 const SUPABASE_URL = 'https://lmovgrlioctgpdnikert.supabase.co'
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+function escutaMensagensEmTempoReal(adicionaMensagem) {
+  return supabaseClient
+    .from('mensagens')
+    .on('INSERT', respostaLive => {
+      adicionaMensagem(respostaLive.new)
+    })
+    .subscribe()
+}
+
 export default function ChatPage() {
   const roteamento = useRouter()
   const usuarioLogado = roteamento.query.username
   const [mensagem, setMensagem] = React.useState('')
-  const [listaDeMensagens, setListaDeMensagens] = React.useState([
-    {
-      id: 1,
-      de: 'Nanacorrea',
-      texto:
-        ':sticker: https://www.alura.com.br/imersao-react-4/assets/figurinhas/Figurinha_3.png'
-    }
-  ])
+  const [listaDeMensagens, setListaDeMensagens] = React.useState([])
   let botao = ''
 
   React.useEffect(() => {
@@ -30,8 +32,13 @@ export default function ChatPage() {
       .select('*')
       .order('id', { ascending: false })
       .then(({ data }) => {
-        // setListaDeMensagens(data)
+        setListaDeMensagens(data)
       })
+    escutaMensagensEmTempoReal(novaMensagem => {
+      setListaDeMensagens(valorAtualDaLista => {
+        return [novaMensagem, ...valorAtualDaLista]
+      })
+    })
   }, [])
 
   function handleNovaMensagem(novaMensagem) {
@@ -43,9 +50,7 @@ export default function ChatPage() {
     supabaseClient
       .from('mensagens')
       .insert([mensagem])
-      .then(({ data }) => {
-        setListaDeMensagens([data[0], ...listaDeMensagens])
-      })
+      .then(({ data }) => {})
     setMensagem('')
   }
   return (
@@ -125,7 +130,11 @@ export default function ChatPage() {
                 color: appConfig.theme.colors.neutrals[200]
               }}
             />
-            <ButtonSendSticker />
+            <ButtonSendSticker
+              onStickerClick={sticker => {
+                handleNovaMensagem(':sticker:' + sticker)
+              }}
+            />
             {mensagem.length < 1 ? (botao = true) : (botao = false)}
             <Button
               disabled={botao}
@@ -167,10 +176,16 @@ function Header() {
       >
         <Text variant="heading5">Chat</Text>
         <Button
-          variant="tertiary"
-          colorVariant="primary"
+          // variant="tertiary"
+          // colorVariant="primary"
           label="Logout"
           href="/"
+          styleSheet={{
+            backgroundColor: appConfig.theme.colors.primary[500],
+            hover: {
+              backgroundColor: appConfig.theme.colors.primary[600]
+            }
+          }}
         />
       </Box>
     </>
@@ -221,7 +236,8 @@ function MessageList(props) {
                   height: '20px',
                   borderRadius: '50%',
                   display: 'inline-block',
-                  marginRight: '8px'
+                  marginRight: '8px',
+                  marginBottom: '-4px'
                 }}
                 src={`https://github.com/${mensagem.de}.png`}
               />
@@ -236,19 +252,34 @@ function MessageList(props) {
               >
                 {new Date().toLocaleDateString()}
               </Text>
+              <Button
+                label="X"
+                onClick={() => {
+                  handleRemove(mensagem.id)
+                }}
+                styleSheet={{
+                  width: '25px',
+                  height: '25px',
+                  marginLeft: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: appConfig.theme.colors.primary[500],
+                  hover: {
+                    backgroundColor: appConfig.theme.colors.primary[600]
+                  }
+                }}
+              />
             </Box>
-            <Button
-              label="X"
-              onClick={() => {
-                handleRemove(mensagem.id)
-              }}
-              styleSheet={{
-                width: '10px',
-                height: '10px',
-                marginRight: '10px'
-              }}
-            />
-            {mensagem.texto}
+
+            {mensagem.texto.startsWith(':sticker:') ? (
+              <Image
+                src={mensagem.texto.replace(':sticker:', '')}
+                styleSheet={{
+                  maxHeight: '150px'
+                }}
+              />
+            ) : (
+              mensagem.texto
+            )}
           </Text>
         )
       })}
