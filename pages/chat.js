@@ -1,9 +1,11 @@
-import { Box, Text, TextField, Image, Button } from '@skynexui/components'
+import { Box, Text, TextField, Image, Button, Icon } from '@skynexui/components'
 import React from 'react'
 import appConfig from '../config.json'
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/router'
 import { ButtonSendSticker } from '../src/components/ButtonSendSticker'
+import { Popover } from '@mui/material'
+import { getNome } from '../services/getNome'
 
 const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzQwODkwNiwiZXhwIjoxOTU4OTg0OTA2fQ.1KGseWVCdZfq9MGUMAFM0eWIj5bzyHApwlx68lf26_o'
@@ -94,68 +96,77 @@ export default function ChatPage() {
             padding: '16px'
           }}
         >
-          <MessageList
-            mensagens={listaDeMensagens}
-            setLista={setListaDeMensagens}
-          />
-          <Box
-            as="form"
-            styleSheet={{
-              display: 'flex',
-              alignItems: 'center'
-            }}
-          >
-            <TextField
-              value={mensagem}
-              onChange={event => {
-                const valor = event.target.value
-                setMensagem(valor)
-              }}
-              onKeyPress={event => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  handleNovaMensagem(mensagem)
-                }
-              }}
-              placeholder="Insira sua mensagem aqui..."
-              type="textarea"
-              styleSheet={{
-                width: '100%',
-                border: '0',
-                resize: 'none',
-                borderRadius: '5px',
-                padding: '6px 8px',
-                backgroundColor: appConfig.theme.colors.neutrals[800],
-                marginRight: '12px',
-                color: appConfig.theme.colors.neutrals[200]
-              }}
+          {listaDeMensagens.length === 0 ? (
+            <img
+              className="loading"
+              src={`https://icon-library.com/images/loading-icon-animated-gif/loading-icon-animated-gif-7.jpg`}
             />
-            <ButtonSendSticker
-              onStickerClick={sticker => {
-                handleNovaMensagem(':sticker:' + sticker)
-              }}
-            />
-            {mensagem.length < 1 ? (botao = true) : (botao = false)}
-            <Button
-              disabled={botao}
-              onClick={event => {
-                handleNovaMensagem(mensagem)
-              }}
-              styleSheet={{
-                borderRadius: '50%',
-                minHeight: '50px',
-                minWidth: '50px',
-                marginBottom: '8px'
-              }}
-              label=">>"
-              buttonColors={{
-                contrastColor: appConfig.theme.colors.neutrals['000'],
-                mainColor: appConfig.theme.colors.primary[500],
-                mainColorLight: appConfig.theme.colors.primary[400],
-                mainColorStrong: appConfig.theme.colors.primary[600]
-              }}
-            />
-          </Box>
+          ) : (
+            <>
+              <MessageList
+                mensagens={listaDeMensagens}
+                setListaDeMensagens={setListaDeMensagens}
+              />
+              <Box
+                as="form"
+                styleSheet={{
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
+              >
+                <TextField
+                  value={mensagem}
+                  onChange={event => {
+                    const valor = event.target.value
+                    setMensagem(valor)
+                  }}
+                  onKeyPress={event => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      handleNovaMensagem(mensagem)
+                    }
+                  }}
+                  placeholder="Insira sua mensagem aqui..."
+                  type="textarea"
+                  styleSheet={{
+                    width: '100%',
+                    border: '0',
+                    resize: 'none',
+                    borderRadius: '5px',
+                    padding: '6px 8px',
+                    backgroundColor: appConfig.theme.colors.neutrals[800],
+                    marginRight: '12px',
+                    color: appConfig.theme.colors.neutrals[200]
+                  }}
+                />
+                <ButtonSendSticker
+                  onStickerClick={sticker => {
+                    handleNovaMensagem(':sticker:' + sticker)
+                  }}
+                />
+                {mensagem.length < 1 ? (botao = true) : (botao = false)}
+                <Button
+                  disabled={botao}
+                  onClick={event => {
+                    handleNovaMensagem(mensagem)
+                  }}
+                  styleSheet={{
+                    borderRadius: '50%',
+                    minHeight: '50px',
+                    minWidth: '50px',
+                    marginBottom: '8px'
+                  }}
+                  label=">>"
+                  buttonColors={{
+                    contrastColor: appConfig.theme.colors.neutrals['000'],
+                    mainColor: appConfig.theme.colors.primary[500],
+                    mainColorLight: appConfig.theme.colors.primary[400],
+                    mainColorStrong: appConfig.theme.colors.primary[600]
+                  }}
+                />
+              </Box>
+            </>
+          )}
         </Box>
       </Box>
     </Box>
@@ -193,9 +204,63 @@ function Header() {
 }
 
 function MessageList(props) {
-  function handleRemove(id) {
-    const lista = props.mensagens.filter(msg => msg.id !== id)
-    props.setLista(lista)
+  const [usuarioDestacado, setUsuarioDestacado] = React.useState()
+  const [nomeUsuario, setNomeUsuario] = React.useState()
+  const [openedPopover, setOpenedPopover] = React.useState(false)
+  const [popoverAnchor, setPopoverAnchor] = React.useState(null)
+
+  const handlePopoverOpen = event => {
+    setOpenedPopover(true)
+    setPopoverAnchor(event.currentTarget)
+  }
+
+  const handlePopoverClose = () => {
+    setOpenedPopover(false)
+  }
+
+  const popoverEnter = () => {
+    setOpenedPopover(true)
+  }
+  const popoverLeave = () => {
+    setOpenedPopover(false)
+  }
+  function deleteMessage(mensagem) {
+    supabaseClient
+      .from('mensagens')
+      .delete()
+      .match({ id: mensagem.id })
+      .then(({ data }) => {
+        const messageListFiltered = props.mensagens.filter(messageFiltered => {
+          return messageFiltered.id != data[0].id
+        })
+        props.setListaDeMensagens(messageListFiltered)
+      })
+  }
+  function icondelete(mensagem) {
+    if (mensagem.from == props.userlogged) {
+      return (
+        <Button
+          styleSheet={{
+            borderRadius: '50%',
+            width: '30px',
+            marginLeft: '5px',
+            color: 'white',
+            hover: {
+              backgroundColor: appConfig.theme.colors.primary[600]
+            }
+          }}
+          variant="primary"
+          colorVariant="warning"
+          label={<Icon label="icon trash" name="FaRegTrashAlt" />}
+          buttonColors={{
+            mainColor: appConfig.theme.colors.primary[500]
+          }}
+          onClick={() => {
+            deleteMessage(mensagem)
+          }}
+        />
+      )
+    }
   }
   return (
     <Box
@@ -210,6 +275,89 @@ function MessageList(props) {
         marginBottom: '16px'
       }}
     >
+      <Popover
+        open={openedPopover}
+        BackdropProps={{ sx: { pointerEvents: 'none' } }}
+        PaperProps={{
+          sx: { pointerEvents: 'auto' },
+          onMouseEnter: popoverEnter,
+          onMouseLeave: popoverLeave
+        }}
+        sx={{
+          pointerEvents: 'none',
+          height: 400,
+          width: {
+            xs: 200,
+            sm: 300,
+            md: 400,
+            lg: 500,
+            xl: 500
+          }
+        }}
+        anchorEl={popoverAnchor}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left'
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'left'
+        }}
+      >
+        <Box
+          styleSheet={{
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            alignItems: 'center',
+            color: appConfig.theme.colors.neutrals[100],
+            marginBottom: '16px'
+          }}
+        >
+          <Image
+            src={`https://github.com/${usuarioDestacado}.png`}
+            styleSheet={{
+              marginBottom: '16px',
+              border: '1px solid'
+            }}
+          />
+          <Box
+            styleSheet={{
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Text
+              styleSheet={{
+                fontFamily: 'Play',
+                color: 'black'
+              }}
+            >
+              {nomeUsuario}
+            </Text>
+
+            <Button
+              iconName="FaGithub"
+              href={`https://github.com/${usuarioDestacado}`}
+              buttonColors="none"
+              styleSheet={{
+                maxWidth: '20px',
+                maxHeight: '20px',
+                marginLeft: '10px',
+                marginRight: '10px'
+              }}
+              buttonColors={{
+                contrastColor: appConfig.theme.colors.neutrals['000'],
+                mainColor: appConfig.theme.colors.primary[500],
+                mainColorLight: appConfig.theme.colors.primary[400],
+                mainColorStrong: appConfig.theme.colors.primary[600]
+              }}
+            ></Button>
+          </Box>
+        </Box>
+      </Popover>
       {props.mensagens.map(mensagem => {
         return (
           <Text
@@ -240,6 +388,14 @@ function MessageList(props) {
                   marginBottom: '-4px'
                 }}
                 src={`https://github.com/${mensagem.de}.png`}
+                onMouseEnter={event => {
+                  handlePopoverOpen(event)
+                  setUsuarioDestacado(mensagem.de)
+                  getNome(mensagem.de).then(nome => {
+                    setNomeUsuario(nome)
+                  })
+                }}
+                onMouseLeave={handlePopoverClose}
               />
               <Text tag="strong">{mensagem.de}</Text>
               <Text
@@ -252,22 +408,7 @@ function MessageList(props) {
               >
                 {new Date().toLocaleDateString()}
               </Text>
-              <Button
-                label="X"
-                onClick={() => {
-                  handleRemove(mensagem.id)
-                }}
-                styleSheet={{
-                  width: '25px',
-                  height: '25px',
-                  marginLeft: '10px',
-                  borderRadius: '50%',
-                  backgroundColor: appConfig.theme.colors.primary[500],
-                  hover: {
-                    backgroundColor: appConfig.theme.colors.primary[600]
-                  }
-                }}
-              />
+              {icondelete(mensagem)}
             </Box>
 
             {mensagem.texto.startsWith(':sticker:') ? (
